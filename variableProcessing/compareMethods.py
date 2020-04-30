@@ -39,7 +39,7 @@ def generateTable(filename):
         #     train[col][i] = int(train[col][i])
         features = train.columns[1:len(train.columns)]
         X = train[features]
-        y = train['Creditability']
+        y = train[train.columns[0]]
         min_max_scaler = preprocessing.MinMaxScaler()
         X = min_max_scaler.fit_transform(X)
         X_train, X_test, y_train, y_test = train_test_split(
@@ -97,5 +97,6 @@ def generateTable(filename):
     plt.show()
 
 
-generateTable('./dataset/data.csv')
-generateTable('./dataset/german_creditwithBinaryData.csv')
+# generateTable('./dataset/data.csv')
+# generateTable('./dataset/german_creditwithBinaryData.csv')
+generateTable('./dataset/datawithMidClassEncoding.csv')
