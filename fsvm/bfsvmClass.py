@@ -38,6 +38,21 @@ def gaussian_kernel(x, y, sigma=1.0):
     y = np.asarray(y)
     return np.exp((-linalg.norm(x - y) ** 2) / (2 * (sigma ** 2)))
 
+#lowsampling
+def lowSampling(df, percent=3/3):
+    data1 = df[df[0] == 1]  # 将多数
+    data0 = df[df[0] == 0]  # 将少数类别的样本放在data0
+
+    index = np.random.randint(
+        len(data1), size=int(percent * (len(df) - len(data1))))  # 随机给定下采样取出样本的序号
+    lower_data1 = data1.iloc[list(index)]  # 下采样
+    return(pd.concat([lower_data1, data0]))
+
+
+#upsampling
+def upSampling(X_train,y_train):
+    X_train, y_train = SMOTE(kind='svm').fit_sample(X_train, y_train)
+    return X_train, y_train
 
 class BFSVM(object):
     # initial function

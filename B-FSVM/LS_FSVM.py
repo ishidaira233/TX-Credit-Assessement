@@ -406,6 +406,7 @@ if __name__ == '__main__':
         
         clf = LSFSVM(10,kernel_dict, fuzzyvalue,'o',3/4)
         m = clf._mvalue(x_train, y_train)
+        print(m)
         clf.fit(x_train, y_train)
         y_pred = clf.predict(x_test)
         y_prob = clf.predict_prob(x_test)

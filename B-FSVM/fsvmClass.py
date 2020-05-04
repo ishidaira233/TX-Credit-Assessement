@@ -3,17 +3,17 @@ import numpy as np
 from numpy import linalg
 import cvxopt
 
-# 三种kernel核函数
+# kernel functions
 def linear_kernel(x1, x2):
     return np.dot(x1, x2)
 
 
-# 调参1 p
+# p
 def polynomial_kernel(x, y, p=1.5):
     return (1 + np.dot(x, y)) ** p
 
 
-# 调参2 sigmma
+# sigmma
 def gaussian_kernel(x, y, sigma=1.0):
     # print(-linalg.norm(x-y)**2)
     x = np.asarray(x)
@@ -23,9 +23,8 @@ def gaussian_kernel(x, y, sigma=1.0):
 
 
 
-
 class HYP_SVM(object):
-    # 初始化函数
+    # init
     def __init__(self, kernel=None, C=None, P=None, sigma=None):
         self.kernel = kernel
         self.C = C
@@ -34,10 +33,9 @@ class HYP_SVM(object):
         if self.C is not None: self.C = float(self.C)
 
 
-    def m_func(self, X_train, X_test, y):
+    def m_func(self, X_train, y):
         # 提出两个训练集的样本数和特征数
         n_samples, n_features = X_train.shape
-        nt_samples, nt_features = X_test.shape
 
         # 开辟一个n*n的矩阵，用于存放所有计算下来的核函数的值K(i,j)
         self.K = np.zeros((n_samples, n_samples))
@@ -53,7 +51,6 @@ class HYP_SVM(object):
             # print(K[i,j])
 
         X_train = np.asarray(X_train)
-        X_test = np.asarray(X_test)
 
         # 有区别么？
         K1 = np.zeros((n_samples, n_samples))
@@ -177,9 +174,8 @@ class HYP_SVM(object):
 
     ##############################################################################
 
-    def fit(self, X_train, X_test, y):
+    def fit(self, X_train, y):
         n_samples, n_features = X_train.shape
-        nt_samples, nt_features = X_test.shape
         # Gram matrix
 
         # print(self.K.shape)
