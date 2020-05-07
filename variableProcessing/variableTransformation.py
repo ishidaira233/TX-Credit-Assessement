@@ -1,70 +1,45 @@
 import pandas as pd
-import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
-file = "./dataset/data.csv"
-
-# Create a csv with dummies variables
+from labels import *
 
 
-def transformDataBinary(filename):
-    df = pd.read_csv(filename, header=0, sep=",",
-                     index_col=False,  error_bad_lines=False)
+def transformDataHotEncoding(df, labels=None):
+    if (labels == None):
+        labels = df.columns
 
-    for col in df:
+    for col in labels:
         if df[col].dtypes == "object":
-            dummies = pd.get_dummies(df[col])
+            dummies = pd.get_dummies(df[col], prefix=col)
             df = pd.concat([df, dummies], axis=1)
             df = df.drop(col, axis=1)
-    print(df)
 
-    df.to_csv(f'{filename[0:-4]}withBinaryData.csv', index=False)
-
-
-def adaptValue1(n):
-    switcher = {
-        1: -500,
-        2: 100,
-        3: 500,
-        4: 0
-    }
-    return switcher.get(n, n)
+    return df
 
 
-def adaptValue2(n):
-    switcher = {
-        1: 50,
-        2: 300,
-        3: 200,
-        4: 750,
-        5: -1
-    }
-    return switcher.get(n, n)
+def transformDataLabelEncoding(df, labels=None, mode="auto"):
+    if (labels == None):
+        labels = df.columns
+
+    for col in labels:
+        if (mode == "auto"):
+            df[col] = LabelEncoder().fit_transform(df[col])
+        if (mode == "manual"):
+            df[col] = transformTolabel(df[col], col)
+
+    return df
 
 
-def adaptValue3(n):
-    switcher = {
-        1: -1,
-        2: 0.5,
-        3: 2.5,
-        4: 5.5,
-        5: -8.5
-    }
-    return switcher.get(n, n)
-
-
-def transformDataMiddleClass(filename):
-    df = pd.read_csv(filename, header=0, sep=",",
-                     index_col=False,  error_bad_lines=False)
-
-    print(df.columns)
-
-    df["Account Balance"] = df["Account Balance"].apply(adaptValue1)
-    df["Value Savings/Stocks"] = df["Value Savings/Stocks"].apply(adaptValue2)
-    df["Length of current employment"] = df["Length of current employment"].apply(
-        adaptValue3)
-    df.to_csv(f'{filename[0:-4]}withMidClassEncoding2.csv', index=False)
-
-
+# Create a csv with transformed variables
 if __name__ == '__main__':
-    # transformDataBinary(file)
-    transformDataMiddleClass(file)
+    quantitativeLabel = ["credit_history", "purpose", "installment_as_income_perc", "personal_status_sex", "other_debtors",
+                         "present_res_since", "property", "other_installment_plans", "housing", "credits_this_bank", "job", "people_under_maintenance", "telephone", "foreign_worker"]
+    quantitativeLabelOrdered = [
+        "account_check_status", "savings", "present_emp_since"]
+
+    df = pd.read_csv("./dataset/raw_german_credit.csv", sep=",", header=0)
+    df = transformDataHotEncoding(df, quantitativeLabel)
+    df = transformDataLabelEncoding(
+        df, labels=quantitativeLabelOrdered, mode="auto")
+
+    df.to_csv("dataset/processedData.csv", index=False)
