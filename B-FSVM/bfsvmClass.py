@@ -20,6 +20,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import StratifiedKFold
 from imblearn.over_sampling import SMOTE
 import pandas as pd
+from scipy.stats import norm
 
 import seaborn as sns
 
@@ -31,6 +32,8 @@ import DataDeal
 from os import mkdir
 from LS_FSVM import *
 from variableTransformation import *
+from variableReduction import applyPcaWithStandardisation
+from variableReduction import applyPcaWithNormalisation
 # three kernel functions
 def linear_kernel(x1, x2):
     return np.dot(x1, x2)
@@ -148,16 +151,26 @@ class BFSVM(object):
         elif self.fuzzyvalue=='Logistic':
 #            a = self.a
 #            b = self.b
+            scoreorg = score
             a = 1
             N_plus = len(y_train[y_train==1])
             sorted(score,reverse=True)
             b = np.mean(score[N_plus-1]+score[N_plus])
-
-            m_value = np.zeros((len(score)))
-            for i in range(len(score)):
-                m_value[i] = 1/(np.exp(-a*score[i]-b)+1)
-        self.m_value = m_value
-        
+            m_value = [1/(np.exp(-a*scoreorg[i]-b)+1) for i in range(len(score))]
+            self.m_value = np.array(m_value)
+#            y_str = []
+#            for i,y in enumerate(y_train):
+#                if y==1:
+#                    y_str.append("positive")
+#                else:
+#                    y_str.append("negative")
+#            m_value = pd.DataFrame(dict(membership=self.m_value,y=y_str))
+                
+        elif self.fuzzyvalue=='Probit':
+            mu = self.mu
+            sigma = self.sigma
+            self.m_value = norm.cdf((score-mu)/sigma)
+#        return m_value
     def fit(self, X_train, y):
         """
         use the train samples to fit classifier
@@ -309,7 +322,6 @@ class BFSVM(object):
             for n in range(len(epsilon_beta)):
                 b_beta = np.min(-1-epsilon_beta * self.K[ind_beta[n], sv_beta])
         self.b = -(b_alpha+b_beta)/2
-        print('b',self.b)
 #        ####methode 4#######
 #        b_alpha = 0
 ##        print('a',epsilon_alpha)
@@ -335,6 +347,16 @@ class BFSVM(object):
 #                self.b = b_beta
 #        print(self.b)
         # Weight vector
+        ######methode 5#######
+#        self.b = 0
+#        for n in range(len(epsilon_alpha)):
+#            self.b += y[sv_alpha]
+#            self.b -= np.sum(epsilon_alpha * self.K[ind[n], sv_alpha])
+#        for n in range(len(epsilon_beta)):
+#            self.b += y[sv_beta]
+#            self.b -= np.sum(epsilon_beta * self.K[ind[n], sv_beta])
+#        self.b /= (len(epsilon_alpha)+len(epsilon_beta))
+
         if self.kernel == 'polynomial' or 'gaussian' or 'linear':
             self.w = np.zeros(n_features)
             for n in range(len(self.epsilon)):
@@ -384,11 +406,8 @@ class BFSVM(object):
             return np.sign(self.project(X))
         else:
             credit_value = self.credit_value(X)
-            print(credit_value)
             cv =sorted(credit_value,reverse=True)
             cutoff = cv[round(len(X)*ratio)]
-            print(cutoff)
-            print(cv)
             return 2*(credit_value>=cutoff)-1
 #        
         
@@ -447,7 +466,11 @@ if __name__ == '__main__':
     precisionArray = []
     X = data[:,:-1]
     y = data[:,-1]
-    
+#    data = pd.read_csv("../processedData.csv", sep=",", header=0)
+#    # X = applyPcaWithStandardisation(data[data.columns[1:]], 0.9)
+#    X = applyPcaWithNormalisation(data[data.columns[1:]], 0.9)
+#    # X = np.array(data[data.columns[1:]])
+#    y = np.array(data["default"].map({0: -1, 1: 1}))
 #    parameter = grid_search(X,y,kernel='gaussian')
 #    print(ok)
     sss = StratifiedShuffleSplit(n_splits=20, test_size=0.2, random_state=12)
@@ -463,7 +486,7 @@ if __name__ == '__main__':
         clf.mvalue(X_train, y_train)
         clf.fit(X_train, y_train)
         ratio = len(y_train[y_train==1])/len(y_train)
-        y_predict = clf.predict(X_test,ratio)
+        y_predict = clf.predict(X_test,None)
         precisionArray.append((precision(y_predict,y_test)))
     folder_path = "result/"
     #mkdir(folder_path)      
