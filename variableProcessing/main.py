@@ -11,21 +11,22 @@ from variableReduction import applyPcaWithStandardisation
 from variableReduction import applyPcaWithNormalisation
 
 
-if __name__ == '__main__':
-    # data = pd.read_csv("dataset/labelData.csv", sep=",", header=0)
+if __name__ == "__main__":
     data = pd.read_csv("dataset/processedData.csv", sep=",", header=0)
-    # X = applyPcaWithStandardisation(data[data.columns[1:]], 0.9)
-    X = applyPcaWithNormalisation(data[data.columns[1:]], 0.9)
+    # data = pd.read_csv("dataset/labelData.csv", sep=",", header=0)
+    # data = pd.read_csv("dataset/data.csv", sep=",", header=0)
+    X = applyPcaWithStandardisation(data[data.columns[1:]], 0.98)
     # X = np.array(data[data.columns[1:]])
     Y = np.array(data["default"].map({0: -1, 1: 1}))
 
     x_train, x_test, y_train, y_test = train_test_split(
-        X, Y, test_size=0.2, random_state=42)
+        X, Y, test_size=0.2, random_state=42
+    )
 
-    kernel_dict = {'type': 'LINEAR', 'sigma': 0.717}
-    fuzzyvalue = {'type': 'Cen', 'function': 'Lin'}
+    kernel_dict = {"type": "LINEAR", "sigma": 0.717}
+    fuzzyvalue = {"type": "Cen", "function": "Lin"}
 
-    lsfsvm = LSFSVM(10, kernel_dict, fuzzyvalue, 'o', 3/4)
+    lsfsvm = LSFSVM(10, kernel_dict, fuzzyvalue, "o", 3 / 4)
     m = lsfsvm._mvalue(x_train, y_train)
     lsfsvm.fit(x_train, y_train)
     y_pred = lsfsvm.predict(x_test)
@@ -60,10 +61,10 @@ if __name__ == '__main__':
 
     fig = plt.figure(dpi=80)
     ax = fig.add_subplot(1, 1, 1)
-    tableplt = ax.table(cellText=table, loc='center')
+    tableplt = ax.table(cellText=table, loc="center")
     tableplt.set_fontsize(14)
     tableplt.scale(1, 4)
-    ax.axis('off')
+    ax.axis("off")
     plt.show()
 
     # print('y_prob', y_prob)

@@ -11,7 +11,7 @@ import math
 import numpy as np
 from numpy import linalg as LA
 
-'''
+"""
 def kernel_cal(x1,x2,k_type,gammaVal):
     #x1,x2 numpy.array
 	
@@ -24,15 +24,15 @@ def kernel_cal(x1,x2,k_type,gammaVal):
         K = numpy.dot(x1,x2)
 		
     return K
-'''
+"""
 
 
 class kernel:
     # samples is the number of samples
     def __init__(self, samples):
-        '''
+        """
         Two Mat must be converted into np.array
-        '''
+        """
         self.samples = samples
         self.kernelMat = np.zeros((samples, samples))
         self.testMat = None
@@ -47,16 +47,18 @@ class kernel:
 class RBF(kernel):
     def __init__(self, samples, sigma):
         kernel.__init__(self, samples)
-        self.sigma = sigma;
+        self.sigma = sigma
 
     def calculate(self, X):
         X2 = np.sum(np.multiply(X, X), 1)  # sum colums of the matrix
         K0 = np.matrix(X2) + np.matrix(X2).T - 2 * np.dot(X, X.T)
-        self.kernelMat = np.array(np.power(np.exp(-1.0 / (2*self.sigma ** 2)), K0))
+        self.kernelMat = np.array(np.power(np.exp(-1.0 / (2 * self.sigma ** 2)), K0))
         self.X = X
-    '''
+
+    """
     Calculate the kernel for test data
-    '''
+    """
+
     def expand(self, Xtest):
         X2_train = np.sum(np.multiply(self.X, self.X), 1)
         X2_test = np.sum(np.multiply(Xtest, Xtest), 1)
@@ -65,7 +67,7 @@ class RBF(kernel):
             tmp = tmp.T
         K0 = tmp - 2 * np.dot(Xtest, self.X.T)
         # K0 = np.matrix(X2_train).T + np.matrix(X2_test) -2 * np.dot(Xtest,self.X.T)
-        self.testMat = np.array(np.power(np.exp(-1.0 / (2*self.sigma ** 2)), K0))
+        self.testMat = np.array(np.power(np.exp(-1.0 / (2 * self.sigma ** 2)), K0))
 
 
 class LINEAR(kernel):

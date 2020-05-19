@@ -16,8 +16,8 @@ def showExplainedVariance(data, threshold=0.9):
         x.append(i)
         y.append(np.sum(pca.explained_variance_ratio_))
 
-    plt.xlabel('number of component')
-    plt.ylabel('explained variance')
+    plt.xlabel("number of component")
+    plt.ylabel("explained variance")
     plt.plot(x, y)
     plt.hlines(threshold, xmin=0, xmax=n)
 
@@ -38,7 +38,7 @@ def applyPcaWithNormalisation(data, threshold=0.9):
     return pca.fit_transform(X)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     df = pd.read_csv("dataset/processedData.csv", header=0, sep=",")
     df = df.drop("default", axis=1)
 

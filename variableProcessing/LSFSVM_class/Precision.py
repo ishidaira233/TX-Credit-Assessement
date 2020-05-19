@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score
 def precision(predict_ensemble, y_test):
     predict_ensemble[predict_ensemble >= 1] = 1
     predict_ensemble[predict_ensemble <= -1] = -1
-#    print(predict_ensemble)
+    #    print(predict_ensemble)
 
     test_length = len(y_test)
     score = len(y_test[predict_ensemble == y_test]) / test_length
@@ -44,11 +44,28 @@ def precision(predict_ensemble, y_test):
     good = good_preci_clf2 / good_preci
 
     auc = roc_auc_score(y_test, predict_ensemble)
-    print('bad precision', round(bad, 3), 'good precision', round(good, 3),
-          'type1', round(type1, 3), 'type2', round(type2, 3), 'total accuracy', round(score, 3))
-    print('AUC:', auc)
-    return (round(bad, 3), round(good, 3), round(type1, 3), round(type2, 3), round(score, 3), auc)
+    print(
+        "bad precision",
+        round(bad, 3),
+        "good precision",
+        round(good, 3),
+        "type1",
+        round(type1, 3),
+        "type2",
+        round(type2, 3),
+        "total accuracy",
+        round(score, 3),
+    )
+    print("AUC:", auc)
+    return (
+        round(bad, 3),
+        round(good, 3),
+        round(type1, 3),
+        round(type2, 3),
+        round(score, 3),
+        auc,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     precision(predict_ensemble_svm, y_test)
