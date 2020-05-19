@@ -10,9 +10,12 @@ def transformDataHotEncoding(df, labels=None):
 
     for col in labels:
         if df[col].dtypes == "object":
-            dummies = pd.get_dummies(df[col], prefix=col)
-            df = pd.concat([df, dummies], axis=1)
-            df = df.drop(col, axis=1)
+            if len(df[col].unique()) == 2:
+                df[col] = LabelEncoder().fit_transform(df[col])
+            else:
+                dummies = pd.get_dummies(df[col], prefix=col)
+                df = pd.concat([df, dummies], axis=1)
+                df = df.drop(col, axis=1)
 
     return df
 

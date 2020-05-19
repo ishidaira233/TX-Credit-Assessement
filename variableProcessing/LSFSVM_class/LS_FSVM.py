@@ -59,10 +59,16 @@ Methods
 """
 
 
-class LSFSVM():
-
-    def __init__(self, C=3, kernel_dict={'type': 'LINEAR'},
-                 fuzzyvalue={'type': 'Cen', 'function': 'Lin'}, databalance='origine', r_max=1, r_min=1):
+class LSFSVM:
+    def __init__(
+        self,
+        C=3,
+        kernel_dict={"type": "LINEAR"},
+        fuzzyvalue={"type": "Cen", "function": "Lin"},
+        databalance="origine",
+        r_max=1,
+        r_min=1,
+    ):
 
         self.C = C
         self.kernel_dict = kernel_dict
@@ -71,16 +77,16 @@ class LSFSVM():
         self.r_min = r_min
         self.databalance = databalance
 
-#        self.m_value = None
-#        self.alpha = None
-#        self.b = None
-#        self.K = None
+    #        self.m_value = None
+    #        self.alpha = None
+    #        self.b = None
+    #        self.K = None
 
     def _mvalue(self, X, y):
         #        print('fuzzy value:', self.fuzzyvalue )
         train_data = np.append(X, y.reshape(len(y), 1), axis=1)
 
-        if self.databalance == 'LowSampling':
+        if self.databalance == "LowSampling":
             data_maj = train_data[y == 1]  # 将多数
             data_min = train_data[y != 1]
             index = np.random.randint(len(data_maj), size=len(data_min))
@@ -89,15 +95,16 @@ class LSFSVM():
             X = train_data[:, :-1]
             y = train_data[:, -1]
 
-        elif self.databalance == 'UpSampling':
-            X, y = SVMSMOTE(random_state=42).fit_sample(train_data[:, :-1],
-                                                        np.asarray(train_data[:, -1]))
+        elif self.databalance == "UpSampling":
+            X, y = SVMSMOTE(random_state=42).fit_sample(
+                train_data[:, :-1], np.asarray(train_data[:, -1])
+            )
 
         else:
             X = X
             y = y
 
-        if self.fuzzyvalue['type'] == 'Cen':
+        if self.fuzzyvalue["type"] == "Cen":
 
             x_1 = X[y == 1]
             x_0 = X[y == -1]
@@ -115,25 +122,31 @@ class LSFSVM():
                     max_distance_0 = distance
 
             memership = []
-            if self.fuzzyvalue['function'] == 'Lin':
+            if self.fuzzyvalue["function"] == "Lin":
                 for i in range(len(y)):
                     if y[i] == 1:
                         memership.append(
-                            (1 - LA.norm(X[i]-x_centre_1)/(max_distance_1+0.0001)) * self.r_max)
+                            (1 - LA.norm(X[i] - x_centre_1) / (max_distance_1 + 0.0001))
+                            * self.r_max
+                        )
                     if y[i] == -1:
                         memership.append(
-                            (1 - LA.norm(X[i]-x_centre_0)/(max_distance_0+0.0001))*self.r_min)
+                            (1 - LA.norm(X[i] - x_centre_0) / (max_distance_0 + 0.0001))
+                            * self.r_min
+                        )
 
-            elif self.fuzzyvalue['function'] == 'Exp':
+            elif self.fuzzyvalue["function"] == "Exp":
                 for i in range(len(y)):
                     if y[i] == 1:
                         memership.append(
-                            (2/(1+np.exp(LA.norm(X[i]-x_centre_1)))) * self.r_max)
+                            (2 / (1 + np.exp(LA.norm(X[i] - x_centre_1)))) * self.r_max
+                        )
                     if y[i] == -1:
                         memership.append(
-                            (2/(1+np.exp(LA.norm(X[i]-x_centre_0))))*self.r_min)
+                            (2 / (1 + np.exp(LA.norm(X[i] - x_centre_0)))) * self.r_min
+                        )
 
-        elif self.fuzzyvalue['type'] == 'Hyp':
+        elif self.fuzzyvalue["type"] == "Hyp":
             m = y.shape[0]
             C = 3
             gamma = 1
@@ -160,25 +173,26 @@ class LSFSVM():
 
             f = b + np.dot(K.testMat, A)
 
-            d_hyp = abs(f*y)
+            d_hyp = abs(f * y)
 
             memership = []
-            if self.fuzzyvalue['function'] == 'Lin':
+            if self.fuzzyvalue["function"] == "Lin":
                 for i in range(len(y)):
                     if y[i] == 1:
                         memership.append(
-                            (1 - d_hyp[i]/(max(d_hyp)+0.0001))*self.r_max)
+                            (1 - d_hyp[i] / (max(d_hyp) + 0.0001)) * self.r_max
+                        )
                     if y[i] == -1:
                         memership.append(
-                            (1 - d_hyp[i]/(max(d_hyp)+0.0001))*self.r_min)
+                            (1 - d_hyp[i] / (max(d_hyp) + 0.0001)) * self.r_min
+                        )
 
-            elif self.fuzzyvalue['function'] == 'Exp':
+            elif self.fuzzyvalue["function"] == "Exp":
                 for i in range(len(y)):
                     if y[i] == 1:
-                        memership.append(
-                            (2/(1 + np.exp(d_hyp[i]))) * self.r_max)
+                        memership.append((2 / (1 + np.exp(d_hyp[i]))) * self.r_max)
                     if y[i] == -1:
-                        memership.append((2/(1 + np.exp(d_hyp[i])))*self.r_min)
+                        memership.append((2 / (1 + np.exp(d_hyp[i]))) * self.r_min)
 
         self.m_value = np.array(memership)
         return self.m_value
@@ -187,7 +201,7 @@ class LSFSVM():
         #        print('Kernel:', self.kernel_dict)
         train_data = np.append(X, Y.reshape(len(Y), 1), axis=1)
 
-        if self.databalance == 'LowSampling':
+        if self.databalance == "LowSampling":
             data_maj = train_data[Y == 1]  # 将多数
             data_min = train_data[Y != 1]
             index = np.random.randint(len(data_maj), size=len(data_min))
@@ -197,9 +211,10 @@ class LSFSVM():
             Y = train_data[:, -1]
             self.Y = Y
 
-        elif self.databalance == 'UpSampling':
-            X, Y = SVMSMOTE(random_state=42).fit_sample(train_data[:, :-1],
-                                                        np.asarray(train_data[:, -1]))
+        elif self.databalance == "UpSampling":
+            X, Y = SVMSMOTE(random_state=42).fit_sample(
+                train_data[:, :-1], np.asarray(train_data[:, -1])
+            )
             self.Y = Y
 
         else:
@@ -210,14 +225,14 @@ class LSFSVM():
         m = len(Y)
 
         # Kernel
-        if self.kernel_dict['type'] == 'RBF':
-            K = Kernel.RBF(m, self.kernel_dict['sigma'])
+        if self.kernel_dict["type"] == "RBF":
+            K = Kernel.RBF(m, self.kernel_dict["sigma"])
             K.calculate(X)
-        elif self.kernel_dict['type'] == 'LINEAR':
+        elif self.kernel_dict["type"] == "LINEAR":
             K = Kernel.LINEAR(m)
             K.calculate(X)
-        elif self.kernel_dict['type'] == 'POLY':
-            K = Kernel.POLY(m, self.kernel_dict['d'])
+        elif self.kernel_dict["type"] == "POLY":
+            K = Kernel.POLY(m, self.kernel_dict["d"])
             K.calculate(X)
 
         H = np.multiply(np.dot(np.matrix(Y).T, np.matrix(Y)), K.kernelMat)
@@ -255,9 +270,9 @@ class LSFSVM():
         minstep = 1e-10
         sigma = 1e-12
 
-        hiTarget = (prior1+1.0)/(prior1+2.0)
-        loTarget = 1/(prior0+2.0)
-        leng = prior1+prior0
+        hiTarget = (prior1 + 1.0) / (prior1 + 2.0)
+        loTarget = 1 / (prior0 + 2.0)
+        leng = prior1 + prior0
         t = np.zeros(leng)
         for i in range(leng):
             if label[i] > 0:
@@ -266,15 +281,15 @@ class LSFSVM():
                 t[i] = loTarget
 
         A = 0.0
-        B = math.log((prior0+1.0)/(prior1+1.0))
+        B = math.log((prior0 + 1.0) / (prior1 + 1.0))
         fval = 0.0
 
         for i in range(leng):
-            fApB = deci[i]*A+B
+            fApB = deci[i] * A + B
             if fApB >= 0:
-                fval += t[i]*fApB+math.log(1+np.exp(-fApB))
+                fval += t[i] * fApB + math.log(1 + np.exp(-fApB))
             else:
-                fval += (t[i]-1)*fApB+math.log(1+np.exp(fApB))
+                fval += (t[i] - 1) * fApB + math.log(1 + np.exp(fApB))
 
         for it in range(maxiter):
             # Update Gradient and Hessian (use H’ = H + sigma I)
@@ -282,46 +297,46 @@ class LSFSVM():
             h21 = g1 = g2 = 0.0
 
             for i in range(leng):
-                fApB = deci[i]*A+B
+                fApB = deci[i] * A + B
                 if fApB >= 0:
-                    p = np.exp(-fApB)/(1.0+np.exp(-fApB))
-                    q = 1.0/(1.0+np.exp(-fApB))
+                    p = np.exp(-fApB) / (1.0 + np.exp(-fApB))
+                    q = 1.0 / (1.0 + np.exp(-fApB))
                 else:
-                    p = 1.0/(1.0+np.exp(fApB))
-                    q = np.exp(fApB)/(1.0+np.exp(fApB))
+                    p = 1.0 / (1.0 + np.exp(fApB))
+                    q = np.exp(fApB) / (1.0 + np.exp(fApB))
 
-                d2 = p*q
-                h11 += deci[i]*deci[i]*d2
+                d2 = p * q
+                h11 += deci[i] * deci[i] * d2
                 h22 += d2
-                h21 += deci[i]*d2
+                h21 += deci[i] * d2
 
-                d1 = t[i]-p
-                g1 += deci[i]*d1
+                d1 = t[i] - p
+                g1 += deci[i] * d1
                 g2 += d1
 
-            if (abs(g1) < 1e-5 and abs(g2) < 1e-5):  # Stopping criteria
+            if abs(g1) < 1e-5 and abs(g2) < 1e-5:  # Stopping criteria
                 break
-    # Compute modified Newton directions
+            # Compute modified Newton directions
 
-            det = h11*h22-h21*h21
-            dA = -(h22*g1-h21*g2)/det
-            dB = -(-h21*g1+h11*g2)/det
-            gd = g1*dA+g2*dB
+            det = h11 * h22 - h21 * h21
+            dA = -(h22 * g1 - h21 * g2) / det
+            dB = -(-h21 * g1 + h11 * g2) / det
+            gd = g1 * dA + g2 * dB
             stepsize = 1
 
-            while (stepsize >= minstep):
+            while stepsize >= minstep:
                 # Line search
-                newA = A+stepsize*dA
-                newB = B+stepsize*dB
+                newA = A + stepsize * dA
+                newB = B + stepsize * dB
                 newf = 0.0
                 for i in range(leng):
-                    fApB = deci[i]*newA+newB
-                    if (fApB >= 0):
-                        newf += t[i]*fApB+math.log(1+np.exp(-fApB))
+                    fApB = deci[i] * newA + newB
+                    if fApB >= 0:
+                        newf += t[i] * fApB + math.log(1 + np.exp(-fApB))
                     else:
-                        newf += (t[i]-1)*fApB+math.log(1+np.exp(fApB))
+                        newf += (t[i] - 1) * fApB + math.log(1 + np.exp(fApB))
 
-                if (newf < fval+0.0001*stepsize*gd):
+                if newf < fval + 0.0001 * stepsize * gd:
                     A = newA
                     B = newB
                     fval = newf
@@ -329,12 +344,12 @@ class LSFSVM():
                 else:
                     stepsize /= 2.0
 
-            if (stepsize < minstep):
-                print('Line search fails')
+            if stepsize < minstep:
+                print("Line search fails")
                 break
 
-        if (it >= maxiter):
-            print('Reaching maximum iterations')
+        if it >= maxiter:
+            print("Reaching maximum iterations")
 
         return A, B
 
@@ -348,7 +363,7 @@ class LSFSVM():
         prior0 = len(self.Y[self.Y == -1])
         A, B = self.Platt_Probabilistic(deci, label, prior1, prior0)
 
-        y_prob = 1/(1+np.exp(A*self.y_predict+B))
+        y_prob = 1 / (1 + np.exp(A * self.y_predict + B))
         for i in range(len(y_prob)):
             y_prob[i] = round(y_prob[i], 3)
 

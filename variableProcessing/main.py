@@ -7,16 +7,55 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn import preprocessing
 import numpy as np
-from variableReduction import applyPcaWithStandardisation
-from variableReduction import applyPcaWithNormalisation
+from variableReduction import (
+    applyPcaWithStandardisation,
+    applyPcaWithNormalisation,
+    applyKpcaWithStandardisation,
+    applyLlleWithStandardisation,
+)
 
 
-if __name__ == "__main__":
-    data = pd.read_csv("dataset/processedData.csv", sep=",", header=0)
-    # data = pd.read_csv("dataset/labelData.csv", sep=",", header=0)
-    # data = pd.read_csv("dataset/data.csv", sep=",", header=0)
-    X = applyPcaWithStandardisation(data[data.columns[1:]], 0.98)
-    # X = np.array(data[data.columns[1:]])
+def showIndicatorTable(accuracy, sp, se, auc):
+    table = []
+    table.append(["accuracy: ", f"{accuracy:.3f}"])
+    table.append(["specifity: ", f"{sp: .3f}"])
+    table.append(["Sensitivity: ", f"{se:.3f}"])
+    table.append(["AUC: ", f"{auc:.3f}"])
+
+    print(f"accuracy: {accuracy:.3f}")
+    print(f"specifity: {sp: .3f}")
+    print(f"Sensitivity: {se:.3f}")
+    print(f"AUC: {auc:.3f}")
+
+    fig = plt.figure(dpi=80)
+    ax = fig.add_subplot(1, 1, 1)
+    tableplt = ax.table(cellText=table, loc="center")
+    tableplt.set_fontsize(14)
+    tableplt.scale(1, 4)
+    ax.axis("off")
+    plt.show()
+
+
+def getIndicatorResult(y_test, y_pred):
+    correct = np.sum(y_pred == y_test)
+    accuracy = correct / len(y_pred)
+    cm = confusion_matrix(y_test, y_pred)
+
+    sp = cm[0, 0] / (cm[0, 0] + cm[0, 1])
+    se = cm[1, 1] / (cm[1, 0] + cm[1, 1])
+    auc = roc_auc_score(y_test, y_pred)
+
+    return (accuracy, sp, se, auc)
+
+
+def applyLSFSVM(data, dimReductionFunction=None, param1=None, param2=None):
+    if dimReductionFunction == None:
+        dimReductionFunction = applyPcaWithStandardisation
+        if param1 == None:
+            param1 = 0.999
+
+    X = dimReductionFunction(data[data.columns[1:]], param1)
+    # print("ncomp", len(X[0]))
     Y = np.array(data["default"].map({0: -1, 1: 1}))
 
     x_train, x_test, y_train, y_test = train_test_split(
@@ -27,129 +66,93 @@ if __name__ == "__main__":
     fuzzyvalue = {"type": "Cen", "function": "Lin"}
 
     lsfsvm = LSFSVM(10, kernel_dict, fuzzyvalue, "o", 3 / 4)
-    m = lsfsvm._mvalue(x_train, y_train)
+    fuzzyMember = lsfsvm._mvalue(x_train, y_train)
     lsfsvm.fit(x_train, y_train)
+
     y_pred = lsfsvm.predict(x_test)
     y_prob = lsfsvm.predict_prob(x_test)
     decision_function = lsfsvm.decision_function(x_test)
 
-    correct = np.sum(y_pred == y_test)
-    accuracy = correct / len(y_pred)
-    cm = confusion_matrix(y_test, y_pred)
-    print(cm)
-    sp = cm[0, 0] / (cm[0, 0] + cm[0, 1])
-    se = cm[1, 1] / (cm[1, 0] + cm[1, 1])
-    auc = roc_auc_score(y_test, y_pred)
+    return y_test, y_pred
 
-    acc_sum = accuracy
-    sp_sum = sp
-    se_sum = se
-    auc_sum = auc
 
-    table = []
-    print(f"accuracy: {accuracy:.3f}")
-    table.append(["accuracy: ", f"{accuracy:.3f}"])
+if __name__ == "__main__":
+    data1 = pd.read_csv("dataset/processedData.csv", sep=",", header=0)
+    data2 = pd.read_csv("dataset/labelData.csv", sep=",", header=0)
 
-    print(f"specifity: {sp: .3f}")
-    table.append(["specifity: ", f"{sp: .3f}"])
+    #  compare mixEncode and labelEncode
+    # for i in range(1, 3):
+    #     y_test, y_pred = applyLSFSVM(eval(f"data{i}"))
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     # showIndicatorTable(accuracy, sp, se, auc)
+    #     print(f"{i}", accuracy, auc)
 
-    print(f"Sensitivity: {se:.3f}")
-    table.append(["Sensitivity: ", f"{se:.3f}"])
+    #  compare standardisation vs normalisation before pca
+    # y_test1, y_pred1 = applyLSFSVM(data1)
+    # accuracy, sp, se, auc = getIndicatorResult(y_test1, y_pred1)
+    # print("standardisation:", accuracy, auc)
 
-    print(f"AUC: {auc:.3f}")
-    table.append(["AUC: ", f"{auc:.3f}"])
+    # y_test2, y_pred2 = applyLSFSVM(data1, applyPcaWithNormalisation)
+    # accuracy, sp, se, auc = getIndicatorResult(y_test2, y_pred2)
+    # print("normalisation:", accuracy, auc)
 
-    fig = plt.figure(dpi=80)
-    ax = fig.add_subplot(1, 1, 1)
-    tableplt = ax.table(cellText=table, loc="center")
-    tableplt.set_fontsize(14)
-    tableplt.scale(1, 4)
-    ax.axis("off")
+    #  compare auc and pourcentage of explained variance conserved
+    # y1, y2, x = [], [], []
+    # for i in np.linspace(0.6, 1, endpoint=False, num=100):
+    #     y_test, y_pred = applyLSFSVM(data1, param1=i)
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     y1.append(auc)
+    #     y2.append(accuracy)
+    #     x.append(i)
+    #     print(f"result for {i}:", accuracy, auc)
+
+    # plt.xlabel("explained variance")
+    # plt.ylabel("auc and accuracy")
+    # plt.plot(x, y1)
+    # plt.plot(x, y2)
+    # plt.show()
+
+    #  use kpca to reduce dimensions
+    # y1, y2, x = [], [], []
+    # for i in range(1, len(data1.columns)):
+    #     kernel = {"type": "poly", "gamma": None, "degree": 2}
+    #     y_test, y_pred = applyLSFSVM(
+    #         data1,
+    #         dimReductionFunction=applyKpcaWithStandardisation,
+    #         param1=i,
+    #         param2=kernel,
+    #     )
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     y1.append(auc)
+    #     y2.append(accuracy)
+    #     x.append(i)
+    #     print(f"result for {i}:", accuracy, auc)
+
+    # plt.xlabel("n component keep")
+    # plt.ylabel("auc and accuracy")
+    # plt.plot(x, y1)
+    # plt.plot(x, y2)
+    # plt.show()
+
+    #  use lle to reduce dimensions
+    y1, y2, x = [], [], []
+    # for i in range(1, len(data1.columns)):
+    #     y_test, y_pred = applyLSFSVM(
+    #         data1, dimReductionFunction=applyLlleWithStandardisation, param1=i
+    #     )
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     y1.append(auc)
+    #     y2.append(accuracy)
+    #     x.append(i)
+    #     print(f"result for {i}:", accuracy, auc)
+
+    y_test, y_pred = applyLSFSVM(
+        data1, dimReductionFunction=applyLlleWithStandardisation, param1=20
+    )
+    accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    showIndicatorTable(accuracy, sp, se, auc)
+    plt.xlabel("n component keep")
+    plt.ylabel("auc and accuracy")
+    plt.plot(x, y1)
+    plt.plot(x, y2)
     plt.show()
-
-    # print('y_prob', y_prob)
-    # print(y_pred[y_prob < 0.5])
-    # print(y_pred[y_prob > 0.5])
-    # print(decision_function)
-
-    # Precision.precision(y_pred, y_test)
-
-
-# def generateTable(filename):
-#     acc_sum = 0
-#     sp_sum = 0
-#     se_sum = 0
-#     f1_sum = 0
-#     auc_sum = 0
-#     random_state = [10]
-#     train = None
-#     for j in random_state:
-#         train = pd.read_csv(filename, header=0)
-#         # train = transformDataBinary(filename)
-#         # for col in train.columns:
-#         #     print("hey")
-#         #     print("d", col[i])
-#         #     train[col][i] = int(train[col][i])
-#         features = train.columns[1:len(train.columns)]
-#         X = train[features]
-#         y = train[train.columns[0]]
-#         min_max_scaler = preprocessing.MinMaxScaler()
-#         X = min_max_scaler.fit_transform(X)
-#         X_train, X_test, y_train, y_test = train_test_split(
-#             X, y, test_size=0.2, random_state=j)
-
-#         X_train = np.asarray(X_train)
-#         y_train = np.asarray(y_train)
-#         for i in range(len(y_train)):
-#             if y_train[i] == 0:
-#                 y_train[i] = -1
-#         y_test = np.array(y_test)
-#         for i in range(len(y_test)):
-#             if y_test[i] == 0:
-#                 y_test[i] = -1
-
-#         count = 0
-#         X_train, y_train, count = utils.sort_good_bad(X_train, y_train)
-
-#         clf = HYP_SVM(kernel='gaussian', C=1, P=2, sigma=0.8)
-#         clf.m_func(X_train, X_test, y_train)
-#         clf.fit(X_train, X_test, y_train)
-#         y_predict = clf.predict(X_test)
-
-#         correct = np.sum(y_predict == y_test)
-#         accuracy = correct / len(y_predict)
-#         cm = confusion_matrix(y_test, y_predict)
-#         sp = cm[0, 0] / (cm[0, 0] + cm[0, 1])
-#         se = cm[1, 1] / (cm[1, 0] + cm[1, 1])
-#         auc = roc_auc_score(y_test, y_predict)
-
-#         acc_sum += accuracy
-#         sp_sum += sp
-#         se_sum += se
-#         auc_sum += auc
-
-#     table = []
-#     print("accuracy: ", round(acc_sum / len(random_state), 3))
-#     table.append(["accuracy: ", round(acc_sum / len(random_state), 3)])
-
-#     print("specifity: ", round(sp_sum / len(random_state), 3))
-#     table.append(["specifity: ", round(sp_sum / len(random_state), 3)])
-
-#     print("Sensitivity: ", round(se_sum / len(random_state), 3))
-#     table.append(["Sensitivity: ", round(se_sum / len(random_state), 3)])
-
-#     print("AUC: ", round(auc_sum / len(random_state), 3))
-#     table.append(["AUC: ", round(auc_sum / len(random_state), 3)])
-
-#     fig = plt.figure(dpi=80)
-#     ax = fig.add_subplot(1, 1, 1)
-#     tableplt = ax.table(cellText=table, loc='center')
-#     tableplt.set_fontsize(14)
-#     tableplt.scale(1, 4)
-#     ax.axis('off')
-#     plt.show()
-
-
-# # generateTable('./dataset/data.csv')
-# # generateTable('./dataset/german_creditwithBinaryData.csv')
-# generateTable('./dataset/datawithMidClassEncoding.csv')

@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn import preprocessing
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
+from sklearn.manifold import LocallyLinearEmbedding
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -24,16 +25,36 @@ def showExplainedVariance(data, threshold=0.9):
     plt.show()
 
 
-def applyPcaWithStandardisation(data, threshold=0.9):
+def applyKpcaWithStandardisation(data, n_components=None, kernel=None):
+    if kernel == None:
+        kernel = {"type": "linear"}
+
+    X = preprocessing.scale(data)
+    Kpca = KernelPCA(
+        n_components=n_components,
+        kernel=kernel["type"],
+        gamma=kernel["gamma"],
+        degree=kernel["degree"],
+    )
+    return Kpca.fit_transform(X)
+
+
+def applyLlleWithStandardisation(data, n_components=None):
     X = preprocessing.scale(data)
 
-    pca = PCA(n_components=threshold)
+    lle = LocallyLinearEmbedding(n_components=n_components, eigen_solver="auto")
+
+    return lle.fit_transform(X)
+
+
+def applyPcaWithStandardisation(data, threshold=0.9):
+    X = preprocessing.scale(data)
+    pca = PCA(n_components=threshold, svd_solver="full")
     return pca.fit_transform(X)
 
 
 def applyPcaWithNormalisation(data, threshold=0.9):
     X = preprocessing.MinMaxScaler().fit_transform(data)
-
     pca = PCA(n_components=threshold)
     return pca.fit_transform(X)
 
