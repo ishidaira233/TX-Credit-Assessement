@@ -1,0 +1,3 @@
+data.csv > data already process
+german_credit.csv > original data
+german_creditwithBinaryData > hot coding german_credit
