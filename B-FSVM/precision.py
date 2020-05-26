@@ -18,29 +18,20 @@ def precision(predict_ensemble,y_test):
     for i in range(len(predict_ensemble)):
         if predict_ensemble[i] == -1 and y_test[i] == -1:
             ob1_clf1 += 1
-<<<<<<< HEAD
     if ob1: 
         type1 = ob1_clf1 / ob1
     else:
         type1 = 0
-=======
-    type1 = ob1_clf1 / ob1
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
     
     ob2 = len(predict_ensemble[predict_ensemble == 1])
     ob2_clf2 = 0
     for i in range(len(predict_ensemble)):
         if predict_ensemble[i] == 1 and y_test[i] == 1:
             ob2_clf2 += 1
-<<<<<<< HEAD
     if ob2:
         type2 = ob2_clf2 / ob2
     else:
         type2 = 0
-=======
-    type2 = ob2_clf2 / ob2
-    
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
     bad_preci = len(y_test[y_test == -1])
     
     bad_preci_clf1 = 0

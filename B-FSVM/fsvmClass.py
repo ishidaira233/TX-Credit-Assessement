@@ -3,29 +3,17 @@ import numpy as np
 from numpy import linalg
 import cvxopt
 
-<<<<<<< HEAD
 # kernel functions
-=======
-# 三种kernel核函数
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
 def linear_kernel(x1, x2):
     return np.dot(x1, x2)
 
 
-<<<<<<< HEAD
 # p
-=======
-# 调参1 p
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
 def polynomial_kernel(x, y, p=1.5):
     return (1 + np.dot(x, y)) ** p
 
 
-<<<<<<< HEAD
 # sigmma
-=======
-# 调参2 sigmma
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
 def gaussian_kernel(x, y, sigma=1.0):
     # print(-linalg.norm(x-y)**2)
     x = np.asarray(x)
@@ -35,14 +23,8 @@ def gaussian_kernel(x, y, sigma=1.0):
 
 
 
-<<<<<<< HEAD
 class HYP_SVM(object):
     # init
-=======
-
-class HYP_SVM(object):
-    # 初始化函数
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
     def __init__(self, kernel=None, C=None, P=None, sigma=None):
         self.kernel = kernel
         self.C = C
@@ -51,16 +33,9 @@ class HYP_SVM(object):
         if self.C is not None: self.C = float(self.C)
 
 
-<<<<<<< HEAD
     def m_func(self, X_train, y):
         # 提出两个训练集的样本数和特征数
         n_samples, n_features = X_train.shape
-=======
-    def m_func(self, X_train, X_test, y):
-        # 提出两个训练集的样本数和特征数
-        n_samples, n_features = X_train.shape
-        nt_samples, nt_features = X_test.shape
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
 
         # 开辟一个n*n的矩阵，用于存放所有计算下来的核函数的值K(i,j)
         self.K = np.zeros((n_samples, n_samples))
@@ -76,10 +51,6 @@ class HYP_SVM(object):
             # print(K[i,j])
 
         X_train = np.asarray(X_train)
-<<<<<<< HEAD
-=======
-        X_test = np.asarray(X_test)
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
 
         # 有区别么？
         K1 = np.zeros((n_samples, n_samples))
@@ -203,14 +174,8 @@ class HYP_SVM(object):
 
     ##############################################################################
 
-<<<<<<< HEAD
     def fit(self, X_train, y):
         n_samples, n_features = X_train.shape
-=======
-    def fit(self, X_train, X_test, y):
-        n_samples, n_features = X_train.shape
-        nt_samples, nt_features = X_test.shape
->>>>>>> 64f1cc812ac4295f919cea1ee987b9fd0cdea908
         # Gram matrix
 
         # print(self.K.shape)
