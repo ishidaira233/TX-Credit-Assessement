@@ -54,7 +54,11 @@ def applyLSFSVM(data, dimReductionFunction=None, param1=None, param2=None):
         if param1 == None:
             param1 = 0.999
 
-    X = dimReductionFunction(data[data.columns[1:]], param1)
+    if param2 == None:
+        X = dimReductionFunction(data[data.columns[1:]], param1)
+    else:
+        X = dimReductionFunction(data[data.columns[1:]], param1, param2)
+
     # print("ncomp", len(X[0]))
     Y = np.array(data["default"].map({0: -1, 1: 1}))
 
@@ -96,9 +100,9 @@ if __name__ == "__main__":
     # accuracy, sp, se, auc = getIndicatorResult(y_test2, y_pred2)
     # print("normalisation:", accuracy, auc)
 
-    #  compare auc and pourcentage of explained variance conserved
+    # compare auc and pourcentage of explained variance conserved
     # y1, y2, x = [], [], []
-    # for i in np.linspace(0.6, 1, endpoint=False, num=100):
+    # for i in range(1, len(data1.columns)):
     #     y_test, y_pred = applyLSFSVM(data1, param1=i)
     #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
     #     y1.append(auc)
@@ -115,7 +119,7 @@ if __name__ == "__main__":
     #  use kpca to reduce dimensions
     # y1, y2, x = [], [], []
     # for i in range(1, len(data1.columns)):
-    #     kernel = {"type": "poly", "gamma": None, "degree": 2}
+    #     kernel = {"type": "cosine", "gamma": None, "degree": 2}
     #     y_test, y_pred = applyLSFSVM(
     #         data1,
     #         dimReductionFunction=applyKpcaWithStandardisation,
@@ -135,7 +139,7 @@ if __name__ == "__main__":
     # plt.show()
 
     #  use lle to reduce dimensions
-    y1, y2, x = [], [], []
+    # y1, y2, x = [], [], []
     # for i in range(1, len(data1.columns)):
     #     y_test, y_pred = applyLSFSVM(
     #         data1, dimReductionFunction=applyLlleWithStandardisation, param1=i
@@ -146,13 +150,23 @@ if __name__ == "__main__":
     #     x.append(i)
     #     print(f"result for {i}:", accuracy, auc)
 
+    # y_test, y_pred = applyLSFSVM(
+    #     data1, dimReductionFunction=applyLlleWithStandardisation, param1=20
+    # )
+    # accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    # showIndicatorTable(accuracy, sp, se, auc)
+    # plt.xlabel("n component keep")
+    # plt.ylabel("auc and accuracy")
+    # plt.plot(x, y1)
+    # plt.plot(x, y2)
+    # plt.show()
+
+    kernel = {"type": "poly", "gamma": None, "degree": 3}
     y_test, y_pred = applyLSFSVM(
-        data1, dimReductionFunction=applyLlleWithStandardisation, param1=20
+        data1,
+        dimReductionFunction=applyKpcaWithStandardisation,
+        param1=37,
+        param2=kernel,
     )
     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
     showIndicatorTable(accuracy, sp, se, auc)
-    plt.xlabel("n component keep")
-    plt.ylabel("auc and accuracy")
-    plt.plot(x, y1)
-    plt.plot(x, y2)
-    plt.show()
