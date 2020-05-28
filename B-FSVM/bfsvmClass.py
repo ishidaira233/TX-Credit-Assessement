@@ -5,7 +5,6 @@ Created on Sat Apr 18 18:20:34 2020
 
 @author: ishidaira
 """
-
 from cvxopt import matrix
 import numpy as np
 from numpy import linalg
@@ -18,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import GridSearchCV
 from imblearn.over_sampling import SMOTE
 import pandas as pd
 from scipy.stats import norm
@@ -28,12 +28,18 @@ import matplotlib.pyplot as plt
 from Precision import precision
 from imblearn.over_sampling import SVMSMOTE
 from fsvmClass import HYP_SVM
-import DataDeal
+import DataDeal2
 from os import mkdir
 from LS_FSVM import *
 from variableTransformation import *
 from variableReduction import applyPcaWithStandardisation
 from variableReduction import applyPcaWithNormalisation
+
+from imblearn.under_sampling import ClusterCentroids
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.under_sampling import EditedNearestNeighbours
+
+
 # three kernel functions
 def linear_kernel(x1, x2):
     return np.dot(x1, x2)
@@ -52,15 +58,18 @@ def gaussian_kernel(x, y, sigma=1.0):
     return np.exp((-linalg.norm(x - y) ** 2) / (sigma ** 2))
 
 #lowsampling
-def lowSampling(df, percent=3/3):
-    data1 = df[df[0] == 1]  # 将多数
-    data0 = df[df[0] == 0]  # 将少数类别的样本放在data0
-
-    index = np.random.randint(
-        len(data1), size=int(percent * (len(df) - len(data1))))  # 随机给定下采样取出样本的序号
-    lower_data1 = data1.iloc[list(index)]  # 下采样
-    return(pd.concat([lower_data1, data0]))
-
+def lowSampling(X,y,style='prototype'):
+    if style=='prototype':
+        cc = ClusterCentroids(sampling_strategy=3/7,random_state=42)
+        X_resampled, y_resampled = cc.fit_sample(X, y)
+    elif style=='random':
+        rus = RandomUnderSampler(sampling_strategy=3/7,random_state=42,replacement=True)
+        X_resampled, y_resampled = rus.fit_sample(X, y)
+    elif style=='edited':
+        enn = EditedNearestNeighbours(random_state=42)
+        X_resampled, y_resampled = enn.fit_sample(X, y)
+    return X_resampled, y_resampled
+    
 
 #upsampling
 def upSampling(X_train,y_train):
@@ -77,9 +86,12 @@ def grid_search(X,y,kernel='gaussian'):
             for sigma in [0.6,0.7,0.8]:
                 pre = np.zeros(6)
                 for test,train in rs.split(X,y):
+                    X_train = X[train]
+                    y_train = y[train]
                     clf = BFSVM(kernel='gaussian',C=C, sigma = sigma)
-                    clf.mvalue(X[train], y[train])
-                    clf.fit(X[train], y[train])
+                    X_train,y_train = lowSampling(X_train,y_train,'prototype')
+                    clf.mvalue(X_train, y_train)
+                    clf.fit(X_train, y_train)
                     y_predict = clf.predict(X[test])
                     y_test = np.array(y[test])
                     for i in range(len(y_test)):
@@ -90,13 +102,10 @@ def grid_search(X,y,kernel='gaussian'):
                 index += 1
     return precisionArray
                     
-        
+
 class BFSVM(object):
     # initial function
-    def __init__(self, kernel=None, fuzzyvalue='Logistic',databalance='origine',a = 4, b = 3, C=None, P=None, sigma=None):
-        """
-        init function
-        """
+    def __init__(self, kernel=None, fuzzyvalue='Logistic',databalance='origine',a = 4, b = 3, C=None, P=None, sigma=None,ratio_class=None):
         self.kernel = kernel
         self.C = C
         self.P = P
@@ -106,6 +115,7 @@ class BFSVM(object):
         self.b = b
         self.databalance = databalance
         if self.C is not None: self.C = float(self.C)
+        self.ratio_class = ratio_class
     
     def mvalue(self, X_train,y_train):
         """
@@ -123,18 +133,16 @@ class BFSVM(object):
 #   ########      Methode 2:LSFSVM ########
         kernel_dict = {'type': 'RBF','sigma':0.717}
         fuzzyvalue = {'type':'Cen','function':'Lin'}
-    
         clf = LSFSVM(10,kernel_dict, fuzzyvalue,'o',3/4)
-        m= clf._mvalue(X_train, y_train)
-        self.abc = m
+        clf._mvalue(X_train, y_train)
         clf.fit(X_train, y_train)
         clf.predict(X_train)
         score = clf.y_predict-clf.b
 #   ########       Methode 3:SVM ########
-#        clf = SVC(gamma='scale')
+#        clf = SVC(gamma='scale',class_weight={1:1,-1:17})
 #        clf.fit(X_train,y_train)
 #        score = clf.decision_function(X_train)
-        #print(score)
+        
         if self.fuzzyvalue=='Lin':
             m_value = (score-max(score))/(max(score)-min(score))
         elif self.fuzzyvalue=='Bridge':
@@ -158,19 +166,18 @@ class BFSVM(object):
             b = np.mean(score[N_plus-1]+score[N_plus])
             m_value = [1/(np.exp(-a*scoreorg[i]-b)+1) for i in range(len(score))]
             self.m_value = np.array(m_value)
-#            y_str = []
-#            for i,y in enumerate(y_train):
-#                if y==1:
-#                    y_str.append("positive")
-#                else:
-#                    y_str.append("negative")
-#            m_value = pd.DataFrame(dict(membership=self.m_value,y=y_str))
-                
+            y_str = []
+            for i,y in enumerate(y_train):
+                if y==1:
+                    y_str.append("positive")
+                else:
+                    y_str.append("negative")
         elif self.fuzzyvalue=='Probit':
             mu = self.mu
             sigma = self.sigma
             self.m_value = norm.cdf((score-mu)/sigma)
-#        return m_value
+
+
     def fit(self, X_train, y):
         """
         use the train samples to fit classifier
@@ -248,9 +255,12 @@ class BFSVM(object):
             # h = 4n*1
             tmp1 = np.zeros(2*n_samples)
             tmp2 = np.ones(n_samples) * self.C * self.m_value
-            tmp3 = np.ones(n_samples) * self.C * (1 - self.m_value)
+            tmp4 = np.array([1 if i==1 else self.ratio_class for i in y])
+            if self.ratio_class==None:
+                tmp3 = np.ones(n_samples) * self.C * (1 - self.m_value)
+            else:
+                tmp3 = np.ones(n_samples) * self.C * (1 - self.m_value)*tmp4
             h = cvxopt.matrix(np.hstack((tmp1,tmp2,tmp3)))
-
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h, A, b)
         # print(solution['status'])
@@ -289,6 +299,7 @@ class BFSVM(object):
         self.sv_yorg = y
         X_train = np.asarray(X_train)
         self.K = self.K[:n_samples,:n_samples]
+
 
 #         Calculate b 
 #        ####methode 1######
@@ -357,6 +368,8 @@ class BFSVM(object):
 #            self.b -= np.sum(epsilon_beta * self.K[ind[n], sv_beta])
 #        self.b /= (len(epsilon_alpha)+len(epsilon_beta))
 
+
+        # Weight vector
         if self.kernel == 'polynomial' or 'gaussian' or 'linear':
             self.w = np.zeros(n_features)
             for n in range(len(self.epsilon)):
@@ -462,7 +475,15 @@ class BFSVM(object):
 
 if __name__ == '__main__':
     
-    data = DataDeal.get_data('../german_numerical.csv')
+#    data = DataDeal.get_data('../german_numerical.csv')
+#    data = pd.read_csv("../labelData.csv", sep=",", header=0)
+#    
+#    X = np.array(data[data.columns[1:]])
+#    y = np.array(data["default"].map({0: -1, 1: 1}))
+    data = pd.read_csv("../Database_Encodage.csv")
+    X = data.drop(['Loan classification'],axis = 1)
+    label = data['Loan classification']
+    data = DataDeal2.get_data(X,label,'standardization')
     precisionArray = []
     X = data[:,:-1]
     y = data[:,-1]
@@ -471,7 +492,7 @@ if __name__ == '__main__':
 #    X = applyPcaWithNormalisation(data[data.columns[1:]], 0.9)
 #    # X = np.array(data[data.columns[1:]])
 #    y = np.array(data["default"].map({0: -1, 1: 1}))
-#    parameter = grid_search(X,y,kernel='gaussian')
+    #parameter = grid_search(X,y,kernel='gaussian')
 #    print(ok)
     sss = StratifiedShuffleSplit(n_splits=20, test_size=0.2, random_state=12)
     #sss = StratifiedKFold(n_splits=10, random_state=12, shuffle=True)
@@ -480,13 +501,15 @@ if __name__ == '__main__':
         y_test = y[test]
         X_train = X[train]
         y_train = y[train]
-        clf = BFSVM(kernel='gaussian',a=8,b=6,C=10, sigma = 0.7)
+        clf = BFSVM(kernel='gaussian',a=8,b=6,C=10, sigma = 0.6)
         #for FSVM optimistic parameters are a=4,b=3,C=100,sigma=0.717
         #for BFSVM optimisitc parmeters are a=8,b=6,C=10,sigma=0.6,0.7/0.8
-        clf.mvalue(X_train, y_train)
+        X_train,y_train = lowSampling(X_train,y_train,'prototype')
+        mvalue = clf.mvalue(X_train, y_train)
+        #print(ok)
         clf.fit(X_train, y_train)
         ratio = len(y_train[y_train==1])/len(y_train)
-        y_predict = clf.predict(X_test,None)
+        y_predict = clf.predict(X_test,ratio)
         precisionArray.append((precision(y_predict,y_test)))
     folder_path = "result/"
     #mkdir(folder_path)      
@@ -494,4 +517,3 @@ if __name__ == '__main__':
     precisionArray = np.round(np.mean(np.array(precisionArray),axis=0),3)
     
     print('bad precision',precisionArray[0],'good precision',precisionArray[1],'type1', precisionArray[2], 'type2', precisionArray[3], 'total accuracy', precisionArray[4],'AUC',precisionArray[5])
-    
