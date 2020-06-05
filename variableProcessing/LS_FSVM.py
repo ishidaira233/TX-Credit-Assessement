@@ -5,10 +5,12 @@ Created on Wed Apr  1 22:46:20 2020
 @author: zinan
 """
 
+import DataDeal
+
 import numpy as np
 from numpy import linalg as LA
-from BFSVM_class import Kernel
-from BFSVM_class import precision
+import Kernel
+from Precision import precision
 from imblearn.over_sampling import SVMSMOTE
 import math
 from sklearn.model_selection import train_test_split

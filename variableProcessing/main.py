@@ -1,5 +1,6 @@
 from LSFSVM_class.LS_FSVM import LSFSVM
-from LSFSVM_class import Precision
+from bfsvmClass import BFSVM
+from BFSVM_class.bfsvmClass import BFSVM
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import confusion_matrix
@@ -12,7 +13,10 @@ from variableReduction import (
     applyPcaWithNormalisation,
     applyKpcaWithStandardisation,
     applyLlleWithStandardisation,
+    applyIcaWithStandardisation,
 )
+from oversampling import upSampling
+from sklearn.ensemble import RandomForestClassifier
 
 
 def showIndicatorTable(accuracy, sp, se, auc):
@@ -60,7 +64,7 @@ def applyLSFSVM(data, dimReductionFunction=None, param1=None, param2=None):
         X = dimReductionFunction(data[data.columns[1:]], param1, param2)
 
     # print("ncomp", len(X[0]))
-    Y = np.array(data["default"].map({0: -1, 1: 1}))
+    Y = np.array(data["default"].map({0: -1, 1: 1, -1: -1}))
 
     x_train, x_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.2, random_state=42
@@ -80,10 +84,73 @@ def applyLSFSVM(data, dimReductionFunction=None, param1=None, param2=None):
     return y_test, y_pred
 
 
-if __name__ == "__main__":
-    data1 = pd.read_csv("dataset/processedData.csv", sep=",", header=0)
-    data2 = pd.read_csv("dataset/labelData.csv", sep=",", header=0)
+def applyBFSVM(data, dimReductionFunction=None, param1=None, param2=None):
+    if dimReductionFunction == None:
+        dimReductionFunction = applyPcaWithStandardisation
+        if param1 == None:
+            param1 = 0.999
 
+    X = data[data.columns[1:]]
+    Y = np.array(data["default"].map({0: -1, 1: 1, -1: -1}))
+
+    # oversampling
+    # X, Y = upSampling(X, Y)
+
+    # dim reduction
+    if param2 == None:
+        X = dimReductionFunction(X, param1)
+    else:
+        X = dimReductionFunction(X, param1, param2)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, Y, test_size=0.2, random_state=42
+    )
+    x_train
+    kernel_dict = {"type": "LINEAR", "sigma": 0.717}
+    fuzzyvalue = {"type": "Cen", "function": "Lin"}
+
+    bfsvm = BFSVM(kernel="gaussian", a=8, b=6, C=10, sigma=0.7)
+    fuzzyMember = bfsvm.mvalue(x_train, y_train)
+    bfsvm.fit(x_train, y_train)
+
+    y_pred = bfsvm.predict(x_test)
+    # y_prob = bfsvm.predict_prob(x_test)
+    # decision_function = bfsvm.decision_function(x_test)
+
+    return y_test, y_pred
+
+
+def applyRF(data, dimReductionFunction=None, param1=None):
+    if dimReductionFunction == None:
+        dimReductionFunction = applyPcaWithStandardisation
+        if param1 == None:
+            param1 = 0.999
+
+    X = data[data.columns[1:]]
+    Y = np.array(data["default"].map({0: -1, 1: 1, -1: -1}))
+
+    # oversampling
+    X, Y = upSampling(X, Y)
+
+    # dim reduction
+    if dimReductionFunction != None:
+        X = dimReductionFunction(X, param1)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, Y, test_size=0.2, random_state=42
+    )
+
+    rf = RandomForestClassifier()
+    rf.fit(x_train, y_train)
+    y_pred = rf.predict(x_test)
+
+    return y_test, y_pred
+
+
+if __name__ == "__main__":
+    data1 = pd.read_csv("../dataset/processedData.csv", sep=",", header=0)
+    data2 = pd.read_csv("../dataset/labelData.csv", sep=",", header=0)
+    data3 = pd.read_csv("../dataset/db.csv", sep=",", header=0)
     #  compare mixEncode and labelEncode
     # for i in range(1, 3):
     #     y_test, y_pred = applyLSFSVM(eval(f"data{i}"))
@@ -161,12 +228,78 @@ if __name__ == "__main__":
     # plt.plot(x, y2)
     # plt.show()
 
-    kernel = {"type": "poly", "gamma": None, "degree": 3}
-    y_test, y_pred = applyLSFSVM(
-        data1,
-        dimReductionFunction=applyKpcaWithStandardisation,
-        param1=37,
-        param2=kernel,
-    )
+    # kernel = {"type": "poly", "gamma": None, "degree": 3}
+    # y_test, y_pred = applyLSFSVM(
+    #     data1,
+    #     dimReductionFunction=applyKpcaWithStandardisation,
+    #     param1=37,
+    #     param2=kernel,
+    # )
+    # accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    # showIndicatorTable(accuracy, sp, se, auc)
+
+    # Use BFSVM with data
+    # y1, y2, x = [], [], []
+    # for i in range(30, len(data1.columns)):
+    #     y_test, y_pred = applyBFSVM(data1, param1=i)
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     y1.append(auc)
+    #     y2.append(accuracy)
+    #     x.append(i)
+    #     print(f"result for {i}:", accuracy, auc)
+
+    # plt.xlabel("explained variance")
+    # plt.ylabel("auc and accuracy")
+    # plt.plot(x, y1)
+    # plt.plot(x, y2)
+    # plt.show()
+
+    # # try ica with data
+    # y1, y2, x = [], [], []
+    # for i in range(30, len(data1.columns)):
+    #     y_test, y_pred = applyLSFSVM(
+    #         data1, param1=i, dimReductionFunction=applyIcaWithStandardisation,
+    #     )
+    #     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    #     y1.append(auc)
+    #     y2.append(accuracy)
+    #     x.append(i)
+    #     print(f"result for {i}:", accuracy, auc)
+
+    # plt.xlabel("explained variance")
+    # plt.ylabel("auc and accuracy")
+    # plt.plot(x, y1)
+    # plt.plot(x, y2)
+    # plt.show()
+
+    # use bfsvm with other dataset
+    # loan = data3[data3["Loan"] == 1].drop(["Loan", "Overdraft"], axis=1)
+    # overdraft = data3[data3["Overdraft"] == 1].drop(["Loan", "Overdraft"], axis=1)
+
+    # # loan
+    # y_test, y_pred = applyBFSVM(
+    #     loan, param1=0.90, dimReductionFunction=applyPcaWithNormalisation
+    # )
+    # accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    # showIndicatorTable(accuracy, sp, se, auc)
+    # print(f"result:", accuracy, auc)
+
+    # #  overdraft
+    # y_test, y_pred = applyBFSVM(overdraft, param1=0.98)
+    # accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    # showIndicatorTable(accuracy, sp, se, auc)
+    # print(f"result:", accuracy, auc)
+
+    # random forest
+    loan = data3[data3["Loan"] == 1].drop(["Loan", "Overdraft"], axis=1)
+    overdraft = data3[data3["Overdraft"] == 1].drop(["Loan", "Overdraft"], axis=1)
+
+    y_test, y_pred = applyRF(overdraft)
     accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
     showIndicatorTable(accuracy, sp, se, auc)
+    print(f"result:", accuracy, auc)
+
+    y_test, y_pred = applyRF(loan)
+    accuracy, sp, se, auc = getIndicatorResult(y_test, y_pred)
+    showIndicatorTable(accuracy, sp, se, auc)
+    print(f"result:", accuracy, auc)
