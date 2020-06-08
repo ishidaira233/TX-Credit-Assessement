@@ -28,30 +28,30 @@ def get_data(X_continue,X_discret,label,processing='scaler'):
 
 if __name__ == '__main__':
     
-    data = pd.read_csv("../Database_Encodage.csv")
-#    data = pd.read_csv("data/Database_label.csv")
-#    data = pd.read_csv("data/Database_onehotencoder.csv")
-    X = data.drop(['Loan classification'],axis = 1)
-    label = data['Loan classification']
-    data = get_data(X,label,'standardization')
-#    data = get_data(X,label,'scaler','False')
-    Train_data,test = train_test_split(data, test_size=0.2,random_state = 42)
-    
-    x_test = test[:,:-1]
-    y_test = test[:,-1]
-    x_train = Train_data[:,:-1]
-    y_train = Train_data[:,-1]
-    
-    clf = svm.SVC(C = 3,class_weight='balanced')
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
-
-    Precision.precision(y_pred,y_test)
-    
-    clf = svm.LinearSVC(C=3,class_weight='balanced')
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
-    Precision.precision(y_pred,y_test)
+#    data = pd.read_csv("../Database_Encodage.csv")
+##    data = pd.read_csv("data/Database_label.csv")
+##    data = pd.read_csv("data/Database_onehotencoder.csv")
+#    X = data.drop(['Loan classification'],axis = 1)
+#    label = data['Loan classification']
+#    data = get_data(X,label,'standardization')
+##    data = get_data(X,label,'scaler','False')
+#    Train_data,test = train_test_split(data, test_size=0.2,random_state = 42)
+#    
+#    x_test = test[:,:-1]
+#    y_test = test[:,-1]
+#    x_train = Train_data[:,:-1]
+#    y_train = Train_data[:,-1]
+#    
+#    clf = svm.SVC(C = 3,class_weight='balanced')
+#    clf.fit(x_train, y_train)
+#    y_pred = clf.predict(x_test)
+#
+#    Precision.precision(y_pred,y_test)
+#    
+#    clf = svm.LinearSVC(C=3,class_weight='balanced')
+#    clf.fit(x_train, y_train)
+#    y_pred = clf.predict(x_test)
+#    Precision.precision(y_pred,y_test)
 
 
 
