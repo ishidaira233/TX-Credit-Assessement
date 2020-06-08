@@ -130,15 +130,16 @@ def applyRF(data, dimReductionFunction=None, param1=None):
     Y = np.array(data["default"].map({0: -1, 1: 1, -1: -1}))
 
     # oversampling
-    X, Y = upSampling(X, Y)
+    # X, Y = upSampling(X, Y)
 
     # dim reduction
-    if dimReductionFunction != None:
-        X = dimReductionFunction(X, param1)
+    # if dimReductionFunction != None:
+    #     X = dimReductionFunction(X, param1)
 
     x_train, x_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.2, random_state=42
     )
+    x_train, y_train = upSampling(x_train, y_train)
 
     rf = RandomForestClassifier()
     rf.fit(x_train, y_train)
