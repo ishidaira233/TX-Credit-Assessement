@@ -9,22 +9,21 @@ import Precision
 from matplotlib import pyplot as plt
 import mca,pandas
 
-def get_data(df, lable,processing='standardization'):
+def get_data(X_continue,X_discret,label,processing='scaler'):
     
-    X = df.astype('int64')
-    X_continue = X.drop(df.columns[9:], axis=1)
-    X_discret = X.drop(df.columns[0:9], axis=1)
     #X = np.array(df)
-    lable = lable.values
+    label = label.values
     if processing == 'scaler':
         X_continue = preprocessing.MinMaxScaler().fit_transform(X_continue)
     elif processing == 'standardization':
         X_continue = preprocessing.StandardScaler().fit_transform(X_continue)
+    elif processing == 'normalisation':
+        X_continue = preprocessing.Normalizer().fit_transform(X_continue)
     mca_counts = mca.MCA(X_discret)
-    #plt.bar(["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","A13","A14","A15","A16","A17","A18"],mca_counts.L)
-    #plt.show()
-    X_discret = mca_counts.fs_r_sup(X_discret, 18)
-    data = np.append(np.concatenate((X_continue,X_discret),axis=1),lable[:,None],axis=1)
+#    plt.bar(["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","A13","A14","A15","A16","A17"],mca_counts.L/mca_counts.inertia)
+#    plt.show()
+    X_discret = mca_counts.fs_r_sup(X_discret, mca_counts.fs_r().shape[1])
+    data = np.append(np.concatenate((X_continue,X_discret),axis=1),label[:,None],axis=1)
     return data
 
 if __name__ == '__main__':

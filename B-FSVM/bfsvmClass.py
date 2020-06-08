@@ -63,7 +63,7 @@ def lowSampling(X,y,style='prototype'):
         cc = ClusterCentroids(sampling_strategy=3/7,random_state=42)
         X_resampled, y_resampled = cc.fit_sample(X, y)
     elif style=='random':
-        rus = RandomUnderSampler(sampling_strategy=3/7,random_state=42,replacement=True)
+        rus = RandomUnderSampler(sampling_strategy=1,random_state=42,replacement=True)
         X_resampled, y_resampled = rus.fit_sample(X, y)
     elif style=='edited':
         enn = EditedNearestNeighbours(random_state=42)
@@ -504,7 +504,7 @@ if __name__ == '__main__':
         clf = BFSVM(kernel='gaussian',a=8,b=6,C=10, sigma = 0.6)
         #for FSVM optimistic parameters are a=4,b=3,C=100,sigma=0.717
         #for BFSVM optimisitc parmeters are a=8,b=6,C=10,sigma=0.6,0.7/0.8
-        X_train,y_train = lowSampling(X_train,y_train,'prototype')
+        X_train,y_train = lowSampling(X_train,y_train,'random')
         mvalue = clf.mvalue(X_train, y_train)
         #print(ok)
         clf.fit(X_train, y_train)

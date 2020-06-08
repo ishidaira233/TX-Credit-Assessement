@@ -38,7 +38,10 @@ def precision(predict_ensemble,y_test):
     for i in range(len(y_test)):
         if predict_ensemble[i] == -1 and y_test[i] == -1:
             bad_preci_clf1 += 1
-    bad = bad_preci_clf1 / bad_preci
+    if bad_preci!=0:
+        bad = bad_preci_clf1 / bad_preci
+    else:
+        bad = 0
     
     good_preci = len(y_test[y_test == 1])
     good_preci_clf2 = 0
