@@ -42,16 +42,25 @@ from imblearn.under_sampling import EditedNearestNeighbours
 
 # three kernel functions
 def linear_kernel(x1, x2):
+    """
+    calculate the linear kernel
+    """
     return np.dot(x1, x2)
 
 
 # param p
 def polynomial_kernel(x, y, p=1.5):
+    """
+    calculate the polynomial kernel
+    """
     return (1 + np.dot(x, y)) ** p
 
 
 # param sigmma
 def gaussian_kernel(x, y, sigma=1.0):
+    """
+    calculate the gaussian kernel
+    """
     # print(-linalg.norm(x-y)**2)
     x = np.asarray(x)
     y = np.asarray(y)
@@ -59,6 +68,9 @@ def gaussian_kernel(x, y, sigma=1.0):
 
 #lowsampling
 def lowSampling(X,y,style='prototype'):
+    """
+    lowsampling methode
+    """
     if style=='prototype':
         cc = ClusterCentroids(sampling_strategy=3/7,random_state=42)
         X_resampled, y_resampled = cc.fit_sample(X, y)
@@ -73,11 +85,17 @@ def lowSampling(X,y,style='prototype'):
 
 #upsampling
 def upSampling(X_train,y_train):
+    """
+    updampling methode
+    """
     X_train, y_train = SMOTE(kind='svm').fit_sample(X_train, y_train)
     return X_train, y_train
 
 
 def grid_search(X,y,kernel='gaussian'):
+    """
+    grid search for parameters
+    """
     rs = StratifiedShuffleSplit(n_splits=5, test_size=.2, random_state=0)
     precisionArray = []
     if kernel == 'gaussian':
@@ -105,7 +123,7 @@ def grid_search(X,y,kernel='gaussian'):
 
 class BFSVM(object):
     # initial function
-    def __init__(self, kernel=None, fuzzyvalue='Logistic',databalance='origine',a = 4, b = 3, C=None, P=None, sigma=None,ratio_class=None):
+    def __init__(self, kernel=None, fuzzyvalue='Logistic',databalance='origine',a = None, b = None, C=None, P=None, sigma=None,ratio_class=None):
         self.kernel = kernel
         self.C = C
         self.P = P
@@ -145,6 +163,7 @@ class BFSVM(object):
         
         if self.fuzzyvalue=='Lin':
             m_value = (score-max(score))/(max(score)-min(score))
+            
         elif self.fuzzyvalue=='Bridge':
             s_up = np.percentile(score,55)
             s_down = np.percentile(score,45)
@@ -156,22 +175,24 @@ class BFSVM(object):
                     m_value[i] = 0
                 else:
                     m_value[i] = (score[i]-s_down)/(s_up-s_down)
+                    
         elif self.fuzzyvalue=='Logistic':
-#            a = self.a
-#            b = self.b
-            scoreorg = score
-            a = 1
-            N_plus = len(y_train[y_train==1])
-            sorted(score,reverse=True)
-            b = np.mean(score[N_plus-1]+score[N_plus])
-            m_value = [1/(np.exp(-a*scoreorg[i]-b)+1) for i in range(len(score))]
+            if self.a!=None:
+                a = self.a
+            else:
+                a = 1
+            if self.b!=None:
+                b = self.b
+                m_value = [1/(np.exp(-a*score[i]-b)+1) for i in range(len(score))]
+            else:
+                scoreorg = np.copy(score)
+                N_plus = len(y_train[y_train==1])
+                sorted(score,reverse=True)
+                b = np.mean(score[N_plus-1]+score[N_plus])
+                m_value = [1/(np.exp(-a*scoreorg[i]-b)+1) for i in range(len(score))]
+                
             self.m_value = np.array(m_value)
-            y_str = []
-            for i,y in enumerate(y_train):
-                if y==1:
-                    y_str.append("positive")
-                else:
-                    y_str.append("negative")
+            
         elif self.fuzzyvalue=='Probit':
             mu = self.mu
             sigma = self.sigma
@@ -477,25 +498,20 @@ if __name__ == '__main__':
     
 #    data = DataDeal.get_data('../german_numerical.csv')
 #    data = pd.read_csv("../labelData.csv", sep=",", header=0)
-#    
 #    X = np.array(data[data.columns[1:]])
 #    y = np.array(data["default"].map({0: -1, 1: 1}))
+    
     data = pd.read_csv("../Database_Encodage.csv")
-    X = data.drop(['Loan classification'],axis = 1)
+    X_continue = X.drop(X.columns[9:],axis=1)
+    X_discret = X.drop(X.columns[0:9],axis=1)
     label = data['Loan classification']
-    data = DataDeal2.get_data(X,label,'standardization')
+    data = DataDeal2.get_data(X_continue,X_discret,label,'standardization')
     precisionArray = []
     X = data[:,:-1]
     y = data[:,-1]
-#    data = pd.read_csv("../processedData.csv", sep=",", header=0)
-#    # X = applyPcaWithStandardisation(data[data.columns[1:]], 0.9)
-#    X = applyPcaWithNormalisation(data[data.columns[1:]], 0.9)
-#    # X = np.array(data[data.columns[1:]])
-#    y = np.array(data["default"].map({0: -1, 1: 1}))
     #parameter = grid_search(X,y,kernel='gaussian')
-#    print(ok)
     sss = StratifiedShuffleSplit(n_splits=20, test_size=0.2, random_state=12)
-    #sss = StratifiedKFold(n_splits=10, random_state=12, shuffle=True)
+    
     for train, test in sss.split(X, y):
         X_test = X[test]
         y_test = y[test]
@@ -506,11 +522,11 @@ if __name__ == '__main__':
         #for BFSVM optimisitc parmeters are a=8,b=6,C=10,sigma=0.6,0.7/0.8
         X_train,y_train = lowSampling(X_train,y_train,'random')
         mvalue = clf.mvalue(X_train, y_train)
-        #print(ok)
         clf.fit(X_train, y_train)
         ratio = len(y_train[y_train==1])/len(y_train)
         y_predict = clf.predict(X_test,ratio)
         precisionArray.append((precision(y_predict,y_test)))
+        
     folder_path = "result/"
     #mkdir(folder_path)      
     np.savetxt(folder_path + "predictions.txt", precisionArray)

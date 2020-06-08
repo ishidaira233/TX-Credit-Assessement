@@ -46,10 +46,10 @@ X = data.drop(['Loan classification'],axis = 1)
 label = data['Loan classification']
 X_continue = X.drop(X.columns[9:],axis=1)
 X_discret = X.drop(X.columns[0:9],axis=1)
-data_overdraft = DataDeal2.get_data(X_continue,X_discret,label,'standardization')
+data = DataDeal2.get_data(X_continue,X_discret,label,'standardization')
 precisionArray = []
-X = data_overdraft[:,:-1]
-y = data_overdraft[:,-1]
+X = data[:,:-1]
+y = data[:,-1]
 for i in range(len(y)):
     if y[i] == 0:
         y[i] = -1
