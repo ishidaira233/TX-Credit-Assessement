@@ -25,11 +25,15 @@ from scipy.stats import norm
 import seaborn as sns
 
 import matplotlib.pyplot as plt
-from BFSVM_class import precision
+from Precision import precision
 from imblearn.over_sampling import SVMSMOTE
-from BFSVM_class.fsvmClass import HYP_SVM
+from fsvmClass import HYP_SVM
+import DataDeal
 from os import mkdir
-from BFSVM_class.LS_FSVM import *
+from LS_FSVM import *
+from variableTransformation import *
+from variableReduction import applyPcaWithStandardisation
+from variableReduction import applyPcaWithNormalisation
 
 # three kernel functions
 def linear_kernel(x1, x2):

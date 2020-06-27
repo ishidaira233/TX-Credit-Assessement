@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.manifold import LocallyLinearEmbedding
+from sklearn.decomposition import FastICA
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -51,6 +52,12 @@ def applyPcaWithStandardisation(data, threshold=0.9):
     X = preprocessing.scale(data)
     pca = PCA(n_components=threshold, svd_solver="full")
     return pca.fit_transform(X)
+
+
+def applyIcaWithStandardisation(data, threshold=0.9):
+    X = preprocessing.scale(data)
+    ica = FastICA(n_components=threshold)
+    return ica.fit_transform(X)
 
 
 def applyPcaWithNormalisation(data, threshold=0.9):

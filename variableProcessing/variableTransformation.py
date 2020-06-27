@@ -35,26 +35,30 @@ def transformDataLabelEncoding(df, labels=None, mode="auto"):
 
 # Create a csv with transformed variables
 if __name__ == "__main__":
-    quantitativeLabel = [
-        "credit_history",
-        "purpose",
-        "installment_as_income_perc",
-        "personal_status_sex",
-        "other_debtors",
-        "present_res_since",
-        "property",
-        "other_installment_plans",
-        "housing",
-        "credits_this_bank",
-        "job",
-        "people_under_maintenance",
-        "telephone",
-        "foreign_worker",
-    ]
-    quantitativeLabelOrdered = ["account_check_status", "savings", "present_emp_since"]
+    # quantitativeLabel = [
+    #     "credit_history",
+    #     "purpose",
+    #     "installment_as_income_perc",
+    #     "personal_status_sex",
+    #     "other_debtors",
+    #     "present_res_since",
+    #     "property",
+    #     "other_installment_plans",
+    #     "housing",
+    #     "credits_this_bank",
+    #     "job",
+    #     "people_under_maintenance",
+    #     "telephone",
+    #     "foreign_worker",
+    # ]
+    # quantitativeLabelOrdered = ["account_check_status", "savings", "present_emp_since"]
 
-    df = pd.read_csv("./dataset/raw_german_credit.csv", sep=",", header=0)
-    df = transformDataHotEncoding(df, quantitativeLabel)
-    df = transformDataLabelEncoding(df, labels=quantitativeLabelOrdered, mode="auto")
+    # df = pd.read_csv("./dataset/raw_german_credit.csv", sep=",", header=0)
+    # df = transformDataHotEncoding(df, quantitativeLabel)
+    # df = transformDataLabelEncoding(df, labels=quantitativeLabelOrdered, mode="auto")
 
-    df.to_csv("dataset/processedData.csv", index=False)
+    # df.to_csv("dataset/processedData.csv", index=False)
+
+    df = pd.read_csv("../dataset/Database_Encodage.csv", sep=",", header=0)
+    df = df.drop("Duration (in months)", axis=1)
+    df.to_csv("../dataset/db_encodage.csv", index=False)
